@@ -42,8 +42,9 @@ assert(html.indexOf('id="diagnostics-screen"') !== -1, "diagnostics screen is pr
 assert(html.indexOf('href="./?diag=same-origin" target="_top"') !== -1, "same-origin diagnostic uses top-level navigation");
 assert(html.indexOf('href="https://example.com/" target="_top"') !== -1, "neutral HTTPS diagnostic uses top-level navigation");
 assert(html.indexOf('data-action="diagnostic-google-signin"') !== -1, "Google sign-in diagnostic is present");
-assert(html.indexOf('data-external-link href="https://www.youtube.com/" target="_top"') !== -1, "YouTube home is a top-level same-window anchor");
-assert(html.indexOf('data-external-link href="https://www.youtube.com/feed/subscriptions" target="_top"') !== -1, "subscriptions is a top-level same-window anchor");
+assert(html.indexOf('data-action="show-external-blocked" data-blocked-target="YouTube home"') !== -1, "YouTube home reflects blocked external navigation");
+assert(html.indexOf('data-action="show-external-blocked" data-blocked-target="Subscriptions"') !== -1, "subscriptions reflects blocked external navigation");
+assert(html.indexOf('href="https://www.youtube.com/" target="_top"') !== -1, "diagnostics still include YouTube top-level navigation");
 assert(html.indexOf('id="watch-link"') !== -1 && html.indexOf('href="https://www.youtube.com/watch?v=M7lc1UVf-VE"') !== -1, "watch link is a real anchor");
 assert(html.indexOf('id="signin-url"') !== -1, "sign-in URL fallback is visible");
 assert(html.indexOf('data-action="copy-signin-url"') !== -1, "sign-in URL copy fallback is available");
@@ -62,6 +63,8 @@ assert(js.indexOf("event.preventDefault()") !== -1, "D-pad key handling prevents
 assert(js.indexOf("isExternalAnchor") !== -1, "external anchor handling preserves native navigation");
 assert(js.indexOf("navigateToExternal") !== -1, "fallback top-level external navigation is present");
 assert(js.indexOf("getDiagnosticResult") !== -1 && js.indexOf("showDiagnosticResult") !== -1, "diagnostic return handling is present");
+assert(js.indexOf("trackExternalAttempt") !== -1, "blocked external attempts are detected in-app");
+assert(js.indexOf("showExternalBlocked") !== -1, "blocked production links show explicit feedback");
 assert(js.indexOf("window.open") === -1, "app does not use popup navigation");
 assert(js.indexOf("window.YT.Player") !== -1, "YouTube web player API is used");
 assert(js.indexOf("localStorage") !== -1, "localStorage persistence is present");
@@ -71,6 +74,7 @@ assert(!/client_secret|refresh_token|password\s*=|AIza[0-9A-Za-z_-]{20,}/.test(j
 assert(manifest.icons && manifest.icons[0] && manifest.icons[0].src === "favicon.png", "manifest references favicon.png");
 assert(manifest.background_color === "#000000", "manifest background is black");
 assert(manifest.display === "standalone", "manifest uses standalone display");
+assert(read("service-worker.js").indexOf("rayban-youtube-display-v4") !== -1, "service worker cache was bumped");
 
 var size = readPngSize("favicon.png");
 assert(size.width >= 53 && size.height >= 53, "favicon is larger than 52x52");

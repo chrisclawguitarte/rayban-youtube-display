@@ -370,6 +370,10 @@ h2 {
   margin-bottom: 0;
 }
 
+.account-panel .blocked-note {
+  color: #ffd166;
+}
+
 .diagnostics-panel {
   margin-top: 12px;
   padding: 12px 14px;

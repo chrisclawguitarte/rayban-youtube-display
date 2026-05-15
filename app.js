@@ -19,7 +19,8 @@
     playerReady: false,
     playerState: "idle",
     apiPromise: null,
-    toastTimer: 0
+    toastTimer: 0,
+    externalAttemptTimer: 0
   };
 
   var playerTarget;
@@ -63,6 +64,7 @@
         return;
       }
       if (isExternalAnchor(target)) {
+        trackExternalAttempt(target);
         showToast(linkOpeningMessage(target));
         return;
       }
@@ -87,10 +89,12 @@
       if (active && active.classList.contains("focusable")) {
         if (isExternalAnchor(active)) {
           if (event.key === "Enter") {
+            trackExternalAttempt(active);
             showToast(linkOpeningMessage(active));
             return;
           }
           event.preventDefault();
+          trackExternalAttempt(active);
           navigateToExternal(active.href);
           return;
         }
@@ -129,6 +133,9 @@
         break;
       case "open-youtube-signin":
         navigateToExternal(CONFIG.signInUrl);
+        break;
+      case "show-external-blocked":
+        showExternalBlocked(element);
         break;
       case "copy-signin-url":
         copySignInUrl();
@@ -343,6 +350,26 @@
       return "Opening " + label + "...";
     }
     return "Opening link...";
+  }
+
+  function trackExternalAttempt(element) {
+    var label = element && element.getAttribute("data-link-label");
+    window.clearTimeout(state.externalAttemptTimer);
+    state.externalAttemptTimer = window.setTimeout(function () {
+      if (document.visibilityState === "hidden") {
+        return;
+      }
+      var message = (label || "External link") + " did not leave the app. External navigation is likely blocked.";
+      if (diagnosticStatus && state.currentScreen === "diagnostics-screen") {
+        diagnosticStatus.textContent = message;
+      }
+      showToast(message);
+    }, 2200);
+  }
+
+  function showExternalBlocked(element) {
+    var target = element && element.getAttribute("data-blocked-target");
+    showToast((target || "External navigation") + " is blocked on the glasses.");
   }
 
   function updateExternalLinks() {

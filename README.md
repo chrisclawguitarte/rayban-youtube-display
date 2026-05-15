@@ -8,6 +8,8 @@ This app does not request, store, proxy, or use Google credentials. It does not 
 
 The YouTube home, subscriptions, watch, and sign-in controls are same-window anchors instead of popups. If the glasses WebView blocks Google sign-in, use the visible sign-in URL fallback from the Account screen in a full browser on the device/account you want YouTube to use.
 
+The current on-device diagnostics result is stricter: same-origin app reload works, but external HTTPS navigation does not leave the app on Meta Ray-Ban Display. The launcher now treats YouTube home, subscriptions, and sign-in as blocked on the glasses instead of presenting them as normal actions.
+
 ## Diagnostics
 
 The launcher includes a Diagnostics screen for isolating navigation behavior on Meta Ray-Ban Display:
@@ -18,6 +20,8 @@ The launcher includes a Diagnostics screen for isolating navigation behavior on 
 - Google sign-in: YouTube sign-in URL
 
 If the app reload test returns but Google sign-in fails, the likely blocker is the embedded Google auth/WebView policy rather than general web app navigation.
+
+If only the app reload test works, the blocker is external top-level navigation from the Meta web app container.
 
 ## Run Locally
 

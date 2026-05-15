@@ -34,19 +34,19 @@
             </span>
           </button>
 
-          <a class="focusable action-card" data-action="open-youtube-home" data-external-link href="https://www.youtube.com/" target="_top">
+          <button class="focusable action-card" data-action="show-external-blocked" data-blocked-target="YouTube home">
             <span class="content">
-              <span class="label">Open YouTube home</span>
-              <span class="meta">Use the normal YouTube site</span>
+              <span class="label">YouTube home blocked</span>
+              <span class="meta">External navigation is blocked on glasses</span>
             </span>
-          </a>
+          </button>
 
-          <a class="focusable action-card" data-action="open-youtube-subscriptions" data-external-link href="https://www.youtube.com/feed/subscriptions" target="_top">
+          <button class="focusable action-card" data-action="show-external-blocked" data-blocked-target="Subscriptions">
             <span class="content">
-              <span class="label">Subscriptions</span>
-              <span class="meta">Requires YouTube sign-in</span>
+              <span class="label">Subscriptions blocked</span>
+              <span class="meta">Requires external YouTube navigation</span>
             </span>
-          </a>
+          </button>
 
           <button class="focusable action-card" data-action="show-account">
             <span class="content">
@@ -109,17 +109,18 @@
         <div class="account-panel">
           <p>This app never asks for, stores, or proxies Google credentials.</p>
           <p>Premium playback is handled by YouTube when the browser is signed in.</p>
+          <p class="blocked-note">Diagnostics showed the glasses do not leave this app for external URLs.</p>
           <label class="url-label" for="signin-url">Sign-in URL</label>
           <input id="signin-url" class="url-field" type="text" value="https://www.youtube.com/signin?action_handle_signin=true&amp;next=%2Faccount&amp;feature=sign_in_button" readonly>
         </div>
 
         <div class="action-list short">
-          <a class="focusable action-card primary" data-action="open-youtube-signin" data-external-link href="https://www.youtube.com/signin?action_handle_signin=true&amp;next=%2Faccount&amp;feature=sign_in_button" target="_top">
+          <button class="focusable action-card primary" data-action="show-external-blocked" data-blocked-target="YouTube sign-in">
             <span class="content">
-              <span class="label">Open YouTube sign-in</span>
-              <span class="meta">Sign in only on youtube.com</span>
+              <span class="label">Sign-in blocked</span>
+              <span class="meta">Google auth needs external navigation</span>
             </span>
-          </a>
+          </button>
           <button class="focusable action-card" data-action="copy-signin-url">
             <span class="content">
               <span class="label">Copy sign-in URL</span>
