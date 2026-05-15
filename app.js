@@ -20,6 +20,7 @@
     player: null,
     playerReady: false,
     playerState: "idle",
+    controlsVisible: false,
     apiPromise: null,
     toastTimer: 0
   };
@@ -32,6 +33,8 @@
   var playerStatus;
   var playerEyebrow;
   var videoTitle;
+  var playerControls;
+  var controlsToggle;
   var toast;
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -43,6 +46,8 @@
     playerStatus = document.getElementById("player-status");
     playerEyebrow = document.getElementById("player-eyebrow");
     videoTitle = document.getElementById("video-title");
+    playerControls = document.getElementById("player-controls");
+    controlsToggle = document.getElementById("controls-toggle");
     toast = document.getElementById("toast");
 
     state.launchVideoId = getLaunchVideoId();
@@ -85,6 +90,10 @@
     }
 
     event.preventDefault();
+    if (state.currentScreen === "player-screen" && state.controlsVisible) {
+      setControlsVisible(false);
+      return;
+    }
     goBack();
   }
 
@@ -104,6 +113,9 @@
         break;
       case "refresh-playlist":
         loadPlaylistData(true);
+        break;
+      case "toggle-controls":
+        setControlsVisible(!state.controlsVisible);
         break;
       case "home":
         showScreen("home-screen", true);
@@ -249,9 +261,9 @@
     saveState();
     renderPlaylist();
     updatePlayerLabels();
+    setControlsVisible(false);
     showScreen("player-screen");
     createOrLoadPlayer(state.activeVideoId);
-
   }
 
   function playRelative(offset) {
@@ -288,8 +300,8 @@
       .then(function () {
         playerTarget.innerHTML = "";
         state.player = new window.YT.Player("player-target", {
-          width: 432,
-          height: 243,
+          width: 584,
+          height: 329,
           videoId: videoId,
           playerVars: {
             autoplay: 1,
@@ -416,6 +428,28 @@
     } else {
       state.player.playVideo();
     }
+  }
+
+  function setControlsVisible(visible) {
+    state.controlsVisible = Boolean(visible);
+    if (!playerControls || !controlsToggle) {
+      return;
+    }
+
+    playerControls.classList.toggle("is-hidden", !state.controlsVisible);
+    controlsToggle.setAttribute("aria-expanded", state.controlsVisible ? "true" : "false");
+    controlsToggle.textContent = state.controlsVisible ? "Hide" : "Controls";
+
+    window.setTimeout(function () {
+      if (state.controlsVisible) {
+        var playToggle = document.getElementById("play-toggle");
+        if (playToggle) {
+          focusElement(playToggle);
+        }
+      } else {
+        focusElement(controlsToggle);
+      }
+    }, 0);
   }
 
   function showScreen(screenId, resetStack) {

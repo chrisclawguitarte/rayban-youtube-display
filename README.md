@@ -4,6 +4,8 @@ A 600x600 Meta Ray-Ban Display compatible web app for playing a YouTube playlist
 
 The app no longer exposes dead outbound navigation. Meta Ray-Ban Display testing showed same-origin app reload works, but external top-level navigation does not leave the web app container. This version stays inside the app and uses the YouTube iframe player only.
 
+The player screen uses a full-width cinema layout. Playback controls are hidden by default behind the Controls button beside Back.
+
 ## Playlist
 
 Configured playlist:
@@ -18,7 +20,7 @@ To refresh the checked-in playlist JSON:
 npm run refresh-playlist
 ~~~
 
-A GitHub Actions workflow also refreshes playlist.json every 30 minutes and commits only when the playlist data changes.
+A GitHub Actions workflow exists for manual refreshes only. The scheduled 30-minute refresh is disabled to avoid spending Actions minutes.
 
 ## Run Locally
 
