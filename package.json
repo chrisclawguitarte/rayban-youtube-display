@@ -1,0 +1,10 @@
+{
+  "name": "rayban-youtube-display",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Meta Ray-Ban Display compatible YouTube web player launcher.",
+  "scripts": {
+    "start": "node server.js",
+    "check": "node scripts/check.js"
+  }
+}
