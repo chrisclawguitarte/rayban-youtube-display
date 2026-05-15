@@ -133,16 +133,18 @@
   }
 
   function createOrLoadPlayer(videoId) {
+    if (state.player && typeof state.player.loadVideoById === "function") {
+      state.playerReady = true;
+      playerStatus.textContent = "Loading selected video...";
+      state.player.loadVideoById(videoId);
+      return;
+    }
+
     state.playerReady = false;
     ensurePlayerPlaceholder("Loading YouTube player...");
 
     loadYouTubeApi()
       .then(function () {
-        if (state.player && typeof state.player.loadVideoById === "function") {
-          state.player.loadVideoById(videoId);
-          return;
-        }
-
         playerTarget.innerHTML = "";
         state.player = new window.YT.Player("player-target", {
           width: 432,
