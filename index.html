@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=600, height=600, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#000000">
-    <meta name="description" content="YouTube web player launcher for Meta Ray-Ban Display glasses.">
-    <title>Ray-Ban YouTube Display</title>
+    <meta name="description" content="Meta Ray-Ban Display playlist player for YouTube embeds.">
+    <title>Meta Display Playlist</title>
     <link rel="icon" href="favicon.png" type="image/png">
     <link rel="manifest" href="manifest.webmanifest">
     <link rel="stylesheet" href="styles.css">
@@ -16,62 +16,34 @@
         <header class="topbar">
           <div>
             <p class="eyebrow">Meta Display</p>
-            <h1>YouTube</h1>
+            <h1 id="playlist-title">Playlist</h1>
           </div>
           <div class="yt-mark" aria-hidden="true">YT</div>
         </header>
 
         <div class="session-panel">
           <span class="session-dot" aria-hidden="true"></span>
-          <span>Premium follows the signed-in YouTube web session.</span>
+          <span id="playlist-summary">Loading playlist...</span>
         </div>
 
-        <nav class="action-list" id="video-list" aria-label="YouTube actions">
-          <button class="focusable action-card primary" data-action="play-video" data-video="M7lc1UVf-VE">
-            <span class="content">
-              <span class="label">Play test video</span>
-              <span class="meta">Inline YouTube web player</span>
-            </span>
-          </button>
+        <div class="playlist-toolbar">
+          <span id="playlist-updated">Waiting for playlist data</span>
+          <button class="focusable compact-button" data-action="refresh-playlist">Refresh</button>
+        </div>
 
-          <button class="focusable action-card" data-action="show-external-blocked" data-blocked-target="YouTube home">
-            <span class="content">
-              <span class="label">YouTube home blocked</span>
-              <span class="meta">External navigation is blocked on glasses</span>
-            </span>
-          </button>
-
-          <button class="focusable action-card" data-action="show-external-blocked" data-blocked-target="Subscriptions">
-            <span class="content">
-              <span class="label">Subscriptions blocked</span>
-              <span class="meta">Requires external YouTube navigation</span>
-            </span>
-          </button>
-
-          <button class="focusable action-card" data-action="show-account">
-            <span class="content">
-              <span class="label">Account</span>
-              <span class="meta">No Google credentials are collected</span>
-            </span>
-          </button>
-
-          <button class="focusable action-card" data-action="show-diagnostics">
-            <span class="content">
-              <span class="label">Diagnostics</span>
-              <span class="meta">Test app, web, YouTube, and sign-in links</span>
-            </span>
-          </button>
+        <nav class="action-list playlist-list" id="playlist-list" aria-label="Playlist videos">
+          <div class="empty-card">Loading videos...</div>
         </nav>
 
-        <p class="footer-note" id="launch-note">Add ?v=VIDEO_ID to launch a specific video.</p>
+        <p class="footer-note">Select a video. The player stays inside this app.</p>
       </section>
 
       <section id="player-screen" class="screen" data-screen="player">
         <header class="compactbar">
           <button class="focusable icon-button" data-action="back" aria-label="Back">&#8592;</button>
           <div>
-            <p class="eyebrow">Now playing</p>
-            <h2 id="video-title">YouTube video</h2>
+            <p class="eyebrow" id="player-eyebrow">Now playing</p>
+            <h2 id="video-title">Playlist video</h2>
           </div>
         </header>
 
@@ -79,112 +51,22 @@
           <div id="player-target" class="player-target" aria-label="YouTube player"></div>
         </div>
 
-        <div class="player-status" id="player-status">Loading YouTube player...</div>
+        <div class="player-status" id="player-status">Choose a video from the playlist.</div>
 
         <div class="control-grid" aria-label="Player controls">
-          <button class="focusable control-button primary" data-action="player-toggle">
+          <button class="focusable control-button primary" data-action="player-toggle" data-preferred-focus>
             <span class="content">Play / Pause</span>
           </button>
-          <a id="watch-link" class="focusable control-button" data-action="open-watch" data-external-link href="https://www.youtube.com/watch?v=M7lc1UVf-VE" target="_top">
-            <span class="content">Watch on YouTube</span>
-          </a>
-          <button class="focusable control-button" data-action="seek-back">
-            <span class="content">Back 10s</span>
+          <button class="focusable control-button" data-action="previous-video">
+            <span class="content">Previous</span>
           </button>
-          <button class="focusable control-button" data-action="seek-forward">
-            <span class="content">Forward 10s</span>
+          <button class="focusable control-button" data-action="next-video">
+            <span class="content">Next</span>
           </button>
-        </div>
-      </section>
-
-      <section id="account-screen" class="screen" data-screen="account">
-        <header class="compactbar">
-          <button class="focusable icon-button" data-action="back" aria-label="Back">&#8592;</button>
-          <div>
-            <p class="eyebrow">YouTube account</p>
-            <h2>Web session</h2>
-          </div>
-        </header>
-
-        <div class="account-panel">
-          <p>This app never asks for, stores, or proxies Google credentials.</p>
-          <p>Premium playback is handled by YouTube when the browser is signed in.</p>
-          <p class="blocked-note">Diagnostics showed the glasses do not leave this app for external URLs.</p>
-          <label class="url-label" for="signin-url">Sign-in URL</label>
-          <input id="signin-url" class="url-field" type="text" value="https://www.youtube.com/signin?action_handle_signin=true&amp;next=%2Faccount&amp;feature=sign_in_button" readonly>
-        </div>
-
-        <div class="action-list short">
-          <button class="focusable action-card primary" data-action="show-external-blocked" data-blocked-target="YouTube sign-in">
-            <span class="content">
-              <span class="label">Sign-in blocked</span>
-              <span class="meta">Google auth needs external navigation</span>
-            </span>
-          </button>
-          <button class="focusable action-card" data-action="copy-signin-url">
-            <span class="content">
-              <span class="label">Copy sign-in URL</span>
-              <span class="meta">Fallback for restricted WebViews</span>
-            </span>
-          </button>
-          <button class="focusable action-card" data-action="home">
-            <span class="content">
-              <span class="label">Back to launcher</span>
-              <span class="meta">Return to Display app</span>
-            </span>
+          <button class="focusable control-button" data-action="refresh-playlist">
+            <span class="content">Refresh List</span>
           </button>
         </div>
-      </section>
-
-      <section id="diagnostics-screen" class="screen" data-screen="diagnostics">
-        <header class="compactbar">
-          <button class="focusable icon-button" data-action="back" aria-label="Back">&#8592;</button>
-          <div>
-            <p class="eyebrow">Diagnostics</p>
-            <h2>Navigation tests</h2>
-          </div>
-        </header>
-
-        <div class="diagnostics-panel">
-          <p id="diagnostic-status">No diagnostic link has returned to the app yet.</p>
-        </div>
-
-        <nav class="action-list diagnostic-list" aria-label="Navigation diagnostics">
-          <a class="focusable action-card primary" data-action="diagnostic-same-origin" data-external-link data-link-label="app reload" href="./?diag=same-origin" target="_top">
-            <span class="content">
-              <span class="label">App URL reload</span>
-              <span class="meta">Returns here with a status marker</span>
-            </span>
-          </a>
-
-          <a class="focusable action-card" data-action="diagnostic-example" data-external-link data-link-label="Example.com" href="https://example.com/" target="_top">
-            <span class="content">
-              <span class="label">Neutral HTTPS</span>
-              <span class="meta">Checks non-Google external navigation</span>
-            </span>
-          </a>
-
-          <a class="focusable action-card" data-action="diagnostic-youtube" data-external-link data-link-label="YouTube" href="https://www.youtube.com/" target="_top">
-            <span class="content">
-              <span class="label">YouTube home</span>
-              <span class="meta">Checks youtube.com navigation</span>
-            </span>
-          </a>
-
-          <a class="focusable action-card" data-action="diagnostic-google-signin" data-external-link data-link-label="Google sign-in" href="https://www.youtube.com/signin?action_handle_signin=true&amp;next=%2Faccount&amp;feature=sign_in_button" target="_top">
-            <span class="content">
-              <span class="label">Google sign-in</span>
-              <span class="meta">Checks embedded auth restrictions</span>
-            </span>
-          </a>
-
-          <button class="focusable action-card" data-action="home">
-            <span class="content">
-              <span class="label">Back to launcher</span>
-              <span class="meta">Return to Display app</span>
-            </span>
-          </button>
-        </nav>
       </section>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>

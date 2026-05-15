@@ -28,27 +28,24 @@ function readPngSize(name) {
 var html = read("index.html");
 var css = read("styles.css");
 var js = read("app.js");
+var serviceWorker = read("service-worker.js");
+var playlist = JSON.parse(read("playlist.json"));
 var manifest = JSON.parse(read("manifest.webmanifest"));
 
 assert(html.indexOf("width=600, height=600") !== -1, "viewport is fixed to 600x600");
 assert(/class="[^"]*screen[^"]*"/.test(html), "screens use .screen class");
 assert(new Set(Array.from(html.matchAll(/id="([^"]+-screen)"/g)).map(function (match) {
   return match[1];
-})).size >= 4, "screens have unique ids");
-assert((html.match(/class="[^"]*focusable/g) || []).length >= 8, "interactive elements are focusable");
-assert((html.match(/data-action="/g) || []).length >= 8, "buttons use data-action attributes");
-assert(html.indexOf('data-action="back"') !== -1, "back buttons use data-action=back");
-assert(html.indexOf('id="diagnostics-screen"') !== -1, "diagnostics screen is present");
-assert(html.indexOf('href="./?diag=same-origin" target="_top"') !== -1, "same-origin diagnostic uses top-level navigation");
-assert(html.indexOf('href="https://example.com/" target="_top"') !== -1, "neutral HTTPS diagnostic uses top-level navigation");
-assert(html.indexOf('data-action="diagnostic-google-signin"') !== -1, "Google sign-in diagnostic is present");
-assert(html.indexOf('data-action="show-external-blocked" data-blocked-target="YouTube home"') !== -1, "YouTube home reflects blocked external navigation");
-assert(html.indexOf('data-action="show-external-blocked" data-blocked-target="Subscriptions"') !== -1, "subscriptions reflects blocked external navigation");
-assert(html.indexOf('href="https://www.youtube.com/" target="_top"') !== -1, "diagnostics still include YouTube top-level navigation");
-assert(html.indexOf('id="watch-link"') !== -1 && html.indexOf('href="https://www.youtube.com/watch?v=M7lc1UVf-VE"') !== -1, "watch link is a real anchor");
-assert(html.indexOf('id="signin-url"') !== -1, "sign-in URL fallback is visible");
-assert(html.indexOf('data-action="copy-signin-url"') !== -1, "sign-in URL copy fallback is available");
-assert(html.indexOf('target="_blank"') === -1, "external links do not use target=_blank");
+})).size >= 2, "screens have unique ids");
+assert(html.indexOf('id="playlist-list"') !== -1, "playlist list is present");
+assert(html.indexOf('data-action="refresh-playlist"') !== -1, "refresh playlist control is present");
+assert(html.indexOf('data-action="next-video"') !== -1, "next video control is present");
+assert(html.indexOf('data-action="previous-video"') !== -1, "previous video control is present");
+assert(html.indexOf("Play test video") === -1, "test video button was removed");
+assert(html.indexOf("Account") === -1, "account screen was removed");
+assert(html.indexOf("Diagnostics") === -1, "diagnostics screen was removed");
+assert(html.indexOf("data-external-link") === -1, "dead external links were removed");
+assert(html.indexOf('target="_blank"') === -1 && html.indexOf('target="_top"') === -1, "app UI does not use external navigation targets");
 assert(html.indexOf('rel="manifest" href="manifest.webmanifest"') !== -1, "manifest is linked");
 assert(html.indexOf('rel="icon" href="favicon.png"') !== -1, "favicon is linked");
 
@@ -58,23 +55,35 @@ assert(css.indexOf("--bg: #000000") !== -1, "black is reserved for the page canv
 assert(css.indexOf("--focus: #44d7ff") !== -1, "visible cyan focus ring is defined");
 assert(css.indexOf("min-height: 88px") !== -1, "primary controls meet 88dp target");
 
+assert(js.indexOf("playlist.json") !== -1, "app fetches same-origin playlist JSON");
+assert(js.indexOf("loadPlaylistData") !== -1, "playlist refresh logic is present");
+assert(js.indexOf("startVideoByIndex") !== -1, "playlist item playback is present");
+assert(js.indexOf("playRelative") !== -1, "next/previous playlist navigation is present");
+assert(js.indexOf("data-preferred-focus") !== -1, "preferred D-pad focus is set");
 assert(js.indexOf("addEventListener(\"keydown\"") !== -1, "keydown listener is present");
 assert(js.indexOf("event.preventDefault()") !== -1, "D-pad key handling prevents default scrolling");
-assert(js.indexOf("isExternalAnchor") !== -1, "external anchor handling preserves native navigation");
-assert(js.indexOf("navigateToExternal") !== -1, "fallback top-level external navigation is present");
-assert(js.indexOf("getDiagnosticResult") !== -1 && js.indexOf("showDiagnosticResult") !== -1, "diagnostic return handling is present");
-assert(js.indexOf("trackExternalAttempt") !== -1, "blocked external attempts are detected in-app");
-assert(js.indexOf("showExternalBlocked") !== -1, "blocked production links show explicit feedback");
 assert(js.indexOf("window.open") === -1, "app does not use popup navigation");
+assert(js.indexOf("window.top.location") === -1, "app does not attempt blocked top-level navigation");
 assert(js.indexOf("window.YT.Player") !== -1, "YouTube web player API is used");
 assert(js.indexOf("localStorage") !== -1, "localStorage persistence is present");
 assert(js.indexOf("serviceWorker") !== -1, "service worker registration is present");
+assert(js.indexOf("M7lc1UVf-VE") === -1, "old YouTube test video id was removed");
 assert(!/client_secret|refresh_token|password\s*=|AIza[0-9A-Za-z_-]{20,}/.test(js), "app JS contains no Google secrets or API keys");
+
+assert(playlist.playlistId === "PL7bU9mtR4VuCsaFjk5VBO8gWRd7pkzqrO", "playlist JSON uses requested playlist id");
+assert(Array.isArray(playlist.videos) && playlist.videos.length > 0, "playlist JSON contains videos");
+playlist.videos.forEach(function (video, index) {
+  assert(/^[A-Za-z0-9_-]{11}$/.test(video.id), "video " + index + " has a valid YouTube id");
+  assert(Boolean(video.title), "video " + index + " has a title");
+});
 
 assert(manifest.icons && manifest.icons[0] && manifest.icons[0].src === "favicon.png", "manifest references favicon.png");
 assert(manifest.background_color === "#000000", "manifest background is black");
 assert(manifest.display === "standalone", "manifest uses standalone display");
-assert(read("service-worker.js").indexOf("rayban-youtube-display-v4") !== -1, "service worker cache was bumped");
+assert(manifest.name === "Meta Display Playlist", "manifest name matches playlist app");
+
+assert(serviceWorker.indexOf("rayban-youtube-display-v5") !== -1, "service worker cache was bumped");
+assert(serviceWorker.indexOf("./playlist.json") !== -1, "service worker caches playlist JSON");
 
 var size = readPngSize("favicon.png");
 assert(size.width >= 53 && size.height >= 53, "favicon is larger than 52x52");
@@ -91,5 +100,6 @@ if (failures.length) {
 }
 
 console.log("All checks passed.");
+console.log("playlist videos: " + playlist.videos.length);
 console.log("app.js gzip bytes: " + gzipped.length);
 console.log("favicon: " + size.width + "x" + size.height + " PNG");

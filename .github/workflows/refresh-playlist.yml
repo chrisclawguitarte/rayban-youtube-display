@@ -1,0 +1,31 @@
+name: Refresh playlist
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/30 * * * *"
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm run refresh-playlist
+      - run: npm run check
+      - name: Commit playlist changes
+        run: |
+          if git diff --quiet playlist.json; then
+            echo "Playlist unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add playlist.json
+          git commit -m "Refresh playlist data"
+          git push

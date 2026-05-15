@@ -2,58 +2,54 @@
   "use strict";
 
   var CONFIG = {
-    appName: "Ray-Ban YouTube Display",
-    storageKey: "rayban-youtube-display:v1",
-    defaultVideoId: "M7lc1UVf-VE",
-    youtubeBase: "https://www.youtube.com",
-    youtubeHomeUrl: "https://www.youtube.com/",
-    subscriptionsUrl: "https://www.youtube.com/feed/subscriptions",
-    signInUrl: "https://www.youtube.com/signin?action_handle_signin=true&next=%2Faccount&feature=sign_in_button"
+    appName: "Meta Display Playlist",
+    storageKey: "rayban-youtube-display:playlist:v1",
+    playlistId: "PL7bU9mtR4VuCsaFjk5VBO8gWRd7pkzqrO",
+    playlistUrl: "playlist.json",
+    youtubeBase: "https://www.youtube.com"
   };
 
   var state = {
     currentScreen: "home-screen",
     screenStack: [],
-    activeVideoId: CONFIG.defaultVideoId,
+    playlist: null,
+    videos: [],
+    activeIndex: 0,
+    activeVideoId: "",
+    launchVideoId: "",
     player: null,
     playerReady: false,
     playerState: "idle",
     apiPromise: null,
-    toastTimer: 0,
-    externalAttemptTimer: 0
+    toastTimer: 0
   };
 
+  var playlistTitle;
+  var playlistSummary;
+  var playlistUpdated;
+  var playlistList;
   var playerTarget;
   var playerStatus;
+  var playerEyebrow;
   var videoTitle;
-  var watchLink;
-  var signInUrlField;
-  var diagnosticStatus;
   var toast;
 
   document.addEventListener("DOMContentLoaded", function () {
+    playlistTitle = document.getElementById("playlist-title");
+    playlistSummary = document.getElementById("playlist-summary");
+    playlistUpdated = document.getElementById("playlist-updated");
+    playlistList = document.getElementById("playlist-list");
     playerTarget = document.getElementById("player-target");
     playerStatus = document.getElementById("player-status");
+    playerEyebrow = document.getElementById("player-eyebrow");
     videoTitle = document.getElementById("video-title");
-    watchLink = document.getElementById("watch-link");
-    signInUrlField = document.getElementById("signin-url");
-    diagnosticStatus = document.getElementById("diagnostic-status");
     toast = document.getElementById("toast");
 
+    state.launchVideoId = getLaunchVideoId();
     restoreState();
-    updateExternalLinks();
     bindEvents();
     registerServiceWorker();
-
-    var launchVideo = getLaunchVideoId();
-    var diagnosticResult = getDiagnosticResult();
-    if (diagnosticResult) {
-      showDiagnosticResult(diagnosticResult);
-    } else if (launchVideo) {
-      startVideo(launchVideo, true);
-    } else {
-      focusFirst();
-    }
+    loadPlaylistData(false);
   });
 
   function bindEvents() {
@@ -61,11 +57,6 @@
     document.addEventListener("click", function (event) {
       var target = event.target.closest("[data-action]");
       if (!target) {
-        return;
-      }
-      if (isExternalAnchor(target)) {
-        trackExternalAttempt(target);
-        showToast(linkOpeningMessage(target));
         return;
       }
       handleAction(target.dataset.action, target);
@@ -87,17 +78,6 @@
     if (event.key === "Enter" || event.key === " ") {
       var active = document.activeElement;
       if (active && active.classList.contains("focusable")) {
-        if (isExternalAnchor(active)) {
-          if (event.key === "Enter") {
-            trackExternalAttempt(active);
-            showToast(linkOpeningMessage(active));
-            return;
-          }
-          event.preventDefault();
-          trackExternalAttempt(active);
-          navigateToExternal(active.href);
-          return;
-        }
         event.preventDefault();
         active.click();
       }
@@ -110,41 +90,20 @@
 
   function handleAction(action, element) {
     switch (action) {
-      case "play-video":
-        startVideo(element.dataset.video || CONFIG.defaultVideoId, false);
+      case "play-index":
+        startVideoByIndex(Number(element.dataset.index), false);
         break;
       case "player-toggle":
         togglePlayer();
         break;
-      case "seek-back":
-        seekBy(-10);
+      case "previous-video":
+        playRelative(-1);
         break;
-      case "seek-forward":
-        seekBy(10);
+      case "next-video":
+        playRelative(1);
         break;
-      case "open-watch":
-        navigateToExternal(watchUrl(state.activeVideoId));
-        break;
-      case "open-youtube-home":
-        navigateToExternal(CONFIG.youtubeHomeUrl);
-        break;
-      case "open-youtube-subscriptions":
-        navigateToExternal(CONFIG.subscriptionsUrl);
-        break;
-      case "open-youtube-signin":
-        navigateToExternal(CONFIG.signInUrl);
-        break;
-      case "show-external-blocked":
-        showExternalBlocked(element);
-        break;
-      case "copy-signin-url":
-        copySignInUrl();
-        break;
-      case "show-account":
-        showScreen("account-screen");
-        break;
-      case "show-diagnostics":
-        showScreen("diagnostics-screen");
+      case "refresh-playlist":
+        loadPlaylistData(true);
         break;
       case "home":
         showScreen("home-screen", true);
@@ -157,20 +116,161 @@
     }
   }
 
-  function startVideo(videoId, fromLaunch) {
-    var safeId = normalizeVideoId(videoId);
-    if (!safeId) {
-      showToast("Invalid YouTube video id");
+  function loadPlaylistData(force) {
+    var url = CONFIG.playlistUrl + (force ? "?t=" + Date.now() : "");
+    if (force) {
+      showToast("Refreshing playlist...");
+    }
+
+    return fetch(url, { cache: force ? "no-store" : "default" })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error("HTTP " + response.status);
+        }
+        return response.json();
+      })
+      .then(function (data) {
+        applyPlaylistData(data, force);
+      })
+      .catch(function () {
+        playlistSummary.textContent = "Playlist could not load.";
+        playlistUpdated.textContent = "Check network and refresh.";
+        renderEmpty("Playlist unavailable. Try Refresh.");
+        showToast("Playlist refresh failed");
+      });
+  }
+
+  function applyPlaylistData(data, force) {
+    var videos = Array.isArray(data.videos) ? data.videos.filter(isValidVideo) : [];
+    if (!videos.length) {
+      throw new Error("No playlist videos");
+    }
+
+    state.playlist = data;
+    state.videos = videos;
+
+    if (data.title) {
+      playlistTitle.textContent = data.title;
+    }
+    playlistSummary.textContent = videos.length + " videos from " + (data.channel || "YouTube");
+    playlistUpdated.textContent = "Updated " + formatDate(data.generatedAt || data.published);
+
+    var launchIndex = state.launchVideoId ? findVideoIndex(state.launchVideoId) : -1;
+    var savedIndex = state.activeVideoId ? findVideoIndex(state.activeVideoId) : -1;
+
+    if (launchIndex !== -1) {
+      state.launchVideoId = "";
+      renderPlaylist();
+      startVideoByIndex(launchIndex, true);
       return;
     }
 
-    state.activeVideoId = safeId;
+    if (savedIndex !== -1) {
+      state.activeIndex = savedIndex;
+    } else {
+      state.activeIndex = Math.min(state.activeIndex, videos.length - 1);
+      state.activeVideoId = videos[state.activeIndex].id;
+    }
+
+    renderPlaylist();
+    updatePlayerLabels();
+
+    if (force) {
+      showToast("Playlist refreshed");
+    }
+    if (state.currentScreen === "home-screen") {
+      window.setTimeout(focusFirst, 0);
+    }
+  }
+
+  function isValidVideo(video) {
+    return video && /^[A-Za-z0-9_-]{11}$/.test(video.id) && video.title;
+  }
+
+  function renderPlaylist() {
+    playlistList.textContent = "";
+    if (!state.videos.length) {
+      renderEmpty("No videos found.");
+      return;
+    }
+
+    state.videos.forEach(function (video, index) {
+      var button = document.createElement("button");
+      button.className = "focusable action-card video-card" + (index === state.activeIndex ? " primary" : "");
+      button.dataset.action = "play-index";
+      button.dataset.index = String(index);
+      if (index === 0) {
+        button.setAttribute("data-preferred-focus", "");
+      }
+
+      var content = document.createElement("span");
+      content.className = "content";
+
+      var title = document.createElement("span");
+      title.className = "label";
+      title.textContent = video.title;
+
+      var meta = document.createElement("span");
+      meta.className = "meta";
+      meta.textContent = (index + 1) + " of " + state.videos.length + " • " + (video.author || "YouTube");
+
+      content.appendChild(title);
+      content.appendChild(meta);
+      button.appendChild(content);
+      playlistList.appendChild(button);
+    });
+  }
+
+  function renderEmpty(message) {
+    playlistList.textContent = "";
+    var empty = document.createElement("div");
+    empty.className = "empty-card";
+    empty.textContent = message;
+    playlistList.appendChild(empty);
+  }
+
+  function startVideoByIndex(index) {
+    if (!state.videos.length) {
+      showToast("Playlist is still loading");
+      return;
+    }
+
+    if (!Number.isFinite(index)) {
+      index = 0;
+    }
+    if (index < 0) {
+      index = state.videos.length - 1;
+    } else if (index >= state.videos.length) {
+      index = 0;
+    }
+
+    state.activeIndex = index;
+    state.activeVideoId = state.videos[index].id;
     saveState();
-    updateExternalLinks();
-    videoTitle.textContent = fromLaunch ? "Launched video" : "Test video";
-    playerStatus.textContent = "Loading YouTube player...";
+    renderPlaylist();
+    updatePlayerLabels();
     showScreen("player-screen");
-    createOrLoadPlayer(safeId);
+    createOrLoadPlayer(state.activeVideoId);
+
+  }
+
+  function playRelative(offset) {
+    if (!state.videos.length) {
+      showToast("Playlist is still loading");
+      return;
+    }
+    startVideoByIndex(state.activeIndex + offset, false);
+  }
+
+  function updatePlayerLabels() {
+    var video = state.videos[state.activeIndex];
+    if (!video) {
+      videoTitle.textContent = "Playlist video";
+      playerEyebrow.textContent = "Now playing";
+      return;
+    }
+    videoTitle.textContent = video.title;
+    playerEyebrow.textContent = "Video " + (state.activeIndex + 1) + " of " + state.videos.length;
   }
 
   function createOrLoadPlayer(videoId) {
@@ -245,7 +345,7 @@
 
   function onPlayerReady(event) {
     state.playerReady = true;
-    playerStatus.textContent = "Ready. YouTube handles account and Premium state.";
+    playerStatus.textContent = "Ready. Use Next and Previous to move through the list.";
     try {
       event.target.playVideo();
     } catch (error) {
@@ -259,21 +359,25 @@
     var playerStates = YT.PlayerState || {};
     if (event.data === playerStates.PLAYING) {
       state.playerState = "playing";
-      playerStatus.textContent = "Playing through the YouTube web player.";
+      playerStatus.textContent = "Playing " + (state.activeIndex + 1) + " of " + state.videos.length + ".";
     } else if (event.data === playerStates.PAUSED) {
       state.playerState = "paused";
       playerStatus.textContent = "Paused.";
     } else if (event.data === playerStates.ENDED) {
       state.playerState = "ended";
-      playerStatus.textContent = "Video ended.";
+      if (state.activeIndex < state.videos.length - 1) {
+        playRelative(1);
+      } else {
+        playerStatus.textContent = "End of playlist.";
+      }
     } else if (event.data === playerStates.BUFFERING) {
       playerStatus.textContent = "Buffering...";
     }
   }
 
   function onPlayerError() {
-    playerStatus.textContent = "YouTube could not play this video inline.";
-    showToast("Open on YouTube for normal playback");
+    playerStatus.textContent = "YouTube could not play this item inline. Try Next.";
+    showToast("Video unavailable");
   }
 
   function loadFallbackIframe(videoId) {
@@ -285,7 +389,7 @@
     playerTarget.innerHTML = "";
     playerTarget.appendChild(iframe);
     state.playerReady = false;
-    playerStatus.textContent = "Inline player loaded. YouTube controls account state.";
+    playerStatus.textContent = "Inline player loaded. Next and Previous reload the frame.";
     focusFirst();
   }
 
@@ -298,6 +402,10 @@
   }
 
   function togglePlayer() {
+    if (!state.activeVideoId) {
+      startVideoByIndex(state.activeIndex, false);
+      return;
+    }
     if (!state.playerReady || !state.player) {
       loadFallbackIframe(state.activeVideoId);
       return;
@@ -308,110 +416,6 @@
     } else {
       state.player.playVideo();
     }
-  }
-
-  function seekBy(seconds) {
-    if (!state.playerReady || !state.player || typeof state.player.seekTo !== "function") {
-      showToast("Seek is available after the player is ready");
-      return;
-    }
-
-    var currentTime = 0;
-    if (typeof state.player.getCurrentTime === "function") {
-      currentTime = state.player.getCurrentTime() || 0;
-    }
-    state.player.seekTo(Math.max(0, currentTime + seconds), true);
-  }
-
-  function isExternalAnchor(element) {
-    return element &&
-      element.tagName === "A" &&
-      element.hasAttribute("data-external-link") &&
-      element.href;
-  }
-
-  function navigateToExternal(url) {
-    if (!url) {
-      showToast("Link unavailable");
-      return;
-    }
-
-    showToast("Opening link...");
-    try {
-      window.top.location.assign(url);
-    } catch (error) {
-      window.location.assign(url);
-    }
-  }
-
-  function linkOpeningMessage(element) {
-    var label = element && element.getAttribute("data-link-label");
-    if (label) {
-      return "Opening " + label + "...";
-    }
-    return "Opening link...";
-  }
-
-  function trackExternalAttempt(element) {
-    var label = element && element.getAttribute("data-link-label");
-    window.clearTimeout(state.externalAttemptTimer);
-    state.externalAttemptTimer = window.setTimeout(function () {
-      if (document.visibilityState === "hidden") {
-        return;
-      }
-      var message = (label || "External link") + " did not leave the app. External navigation is likely blocked.";
-      if (diagnosticStatus && state.currentScreen === "diagnostics-screen") {
-        diagnosticStatus.textContent = message;
-      }
-      showToast(message);
-    }, 2200);
-  }
-
-  function showExternalBlocked(element) {
-    var target = element && element.getAttribute("data-blocked-target");
-    showToast((target || "External navigation") + " is blocked on the glasses.");
-  }
-
-  function updateExternalLinks() {
-    if (watchLink) {
-      watchLink.href = watchUrl(state.activeVideoId);
-    }
-    if (signInUrlField) {
-      signInUrlField.value = CONFIG.signInUrl;
-    }
-  }
-
-  function copySignInUrl() {
-    var text = CONFIG.signInUrl;
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(text)
-        .then(function () {
-          showToast("Sign-in URL copied");
-        })
-        .catch(selectSignInUrl);
-      return;
-    }
-
-    selectSignInUrl();
-  }
-
-  function selectSignInUrl() {
-    if (!signInUrlField) {
-      showToast("Copy unavailable");
-      return;
-    }
-
-    signInUrlField.focus({ preventScroll: true });
-    signInUrlField.select();
-    try {
-      if (document.execCommand("copy")) {
-        showToast("Sign-in URL copied");
-        return;
-      }
-    } catch (error) {
-      // Some WebViews intentionally block clipboard writes.
-    }
-    showToast("Sign-in URL selected");
   }
 
   function showScreen(screenId, resetStack) {
@@ -464,9 +468,11 @@
 
   function focusFirst() {
     var elements = activeFocusables();
-    if (elements.length) {
-      focusElement(elements[0]);
+    if (!elements.length) {
+      return;
     }
+    var preferred = document.querySelector("#" + state.currentScreen + " [data-preferred-focus]");
+    focusElement(preferred || elements[0]);
   }
 
   function focusElement(element) {
@@ -548,23 +554,6 @@
     return normalizeVideoId(params.get("v") || params.get("video") || params.get("url"));
   }
 
-  function getDiagnosticResult() {
-    var params = new URLSearchParams(window.location.search);
-    return params.get("diag") || "";
-  }
-
-  function showDiagnosticResult(result) {
-    var message = "Diagnostic link returned to the app.";
-    if (result === "same-origin") {
-      message = "App URL reload returned here. Same-origin navigation works.";
-    }
-    if (diagnosticStatus) {
-      diagnosticStatus.textContent = message;
-    }
-    showScreen("diagnostics-screen", true);
-    showToast(message);
-  }
-
   function normalizeVideoId(value) {
     if (!value) {
       return "";
@@ -596,13 +585,27 @@
     return "";
   }
 
-  function watchUrl(videoId) {
-    return CONFIG.youtubeBase + "/watch?v=" + encodeURIComponent(videoId);
+  function findVideoIndex(videoId) {
+    return state.videos.findIndex(function (video) {
+      return video.id === videoId;
+    });
   }
 
   function embedUrl(videoId) {
     return CONFIG.youtubeBase + "/embed/" + encodeURIComponent(videoId) +
       "?autoplay=1&playsinline=1&rel=0&modestbranding=1";
+  }
+
+  function formatDate(value) {
+    if (!value) {
+      return "just now";
+    }
+    var date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return "just now";
+    }
+    return date.toLocaleDateString([], { month: "short", day: "numeric" }) + " " +
+      date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
   }
 
   function showToast(message) {
