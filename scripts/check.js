@@ -34,10 +34,14 @@ assert(html.indexOf("width=600, height=600") !== -1, "viewport is fixed to 600x6
 assert(/class="[^"]*screen[^"]*"/.test(html), "screens use .screen class");
 assert(new Set(Array.from(html.matchAll(/id="([^"]+-screen)"/g)).map(function (match) {
   return match[1];
-})).size >= 3, "screens have unique ids");
+})).size >= 4, "screens have unique ids");
 assert((html.match(/class="[^"]*focusable/g) || []).length >= 8, "interactive elements are focusable");
 assert((html.match(/data-action="/g) || []).length >= 8, "buttons use data-action attributes");
 assert(html.indexOf('data-action="back"') !== -1, "back buttons use data-action=back");
+assert(html.indexOf('id="diagnostics-screen"') !== -1, "diagnostics screen is present");
+assert(html.indexOf('href="./?diag=same-origin" target="_top"') !== -1, "same-origin diagnostic uses top-level navigation");
+assert(html.indexOf('href="https://example.com/" target="_top"') !== -1, "neutral HTTPS diagnostic uses top-level navigation");
+assert(html.indexOf('data-action="diagnostic-google-signin"') !== -1, "Google sign-in diagnostic is present");
 assert(html.indexOf('data-external-link href="https://www.youtube.com/" target="_top"') !== -1, "YouTube home is a top-level same-window anchor");
 assert(html.indexOf('data-external-link href="https://www.youtube.com/feed/subscriptions" target="_top"') !== -1, "subscriptions is a top-level same-window anchor");
 assert(html.indexOf('id="watch-link"') !== -1 && html.indexOf('href="https://www.youtube.com/watch?v=M7lc1UVf-VE"') !== -1, "watch link is a real anchor");
@@ -57,6 +61,7 @@ assert(js.indexOf("addEventListener(\"keydown\"") !== -1, "keydown listener is p
 assert(js.indexOf("event.preventDefault()") !== -1, "D-pad key handling prevents default scrolling");
 assert(js.indexOf("isExternalAnchor") !== -1, "external anchor handling preserves native navigation");
 assert(js.indexOf("navigateToExternal") !== -1, "fallback top-level external navigation is present");
+assert(js.indexOf("getDiagnosticResult") !== -1 && js.indexOf("showDiagnosticResult") !== -1, "diagnostic return handling is present");
 assert(js.indexOf("window.open") === -1, "app does not use popup navigation");
 assert(js.indexOf("window.YT.Player") !== -1, "YouTube web player API is used");
 assert(js.indexOf("localStorage") !== -1, "localStorage persistence is present");

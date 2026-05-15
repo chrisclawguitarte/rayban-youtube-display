@@ -54,6 +54,13 @@
               <span class="meta">No Google credentials are collected</span>
             </span>
           </button>
+
+          <button class="focusable action-card" data-action="show-diagnostics">
+            <span class="content">
+              <span class="label">Diagnostics</span>
+              <span class="meta">Test app, web, YouTube, and sign-in links</span>
+            </span>
+          </button>
         </nav>
 
         <p class="footer-note" id="launch-note">Add ?v=VIDEO_ID to launch a specific video.</p>
@@ -126,6 +133,57 @@
             </span>
           </button>
         </div>
+      </section>
+
+      <section id="diagnostics-screen" class="screen" data-screen="diagnostics">
+        <header class="compactbar">
+          <button class="focusable icon-button" data-action="back" aria-label="Back">&#8592;</button>
+          <div>
+            <p class="eyebrow">Diagnostics</p>
+            <h2>Navigation tests</h2>
+          </div>
+        </header>
+
+        <div class="diagnostics-panel">
+          <p id="diagnostic-status">No diagnostic link has returned to the app yet.</p>
+        </div>
+
+        <nav class="action-list diagnostic-list" aria-label="Navigation diagnostics">
+          <a class="focusable action-card primary" data-action="diagnostic-same-origin" data-external-link data-link-label="app reload" href="./?diag=same-origin" target="_top">
+            <span class="content">
+              <span class="label">App URL reload</span>
+              <span class="meta">Returns here with a status marker</span>
+            </span>
+          </a>
+
+          <a class="focusable action-card" data-action="diagnostic-example" data-external-link data-link-label="Example.com" href="https://example.com/" target="_top">
+            <span class="content">
+              <span class="label">Neutral HTTPS</span>
+              <span class="meta">Checks non-Google external navigation</span>
+            </span>
+          </a>
+
+          <a class="focusable action-card" data-action="diagnostic-youtube" data-external-link data-link-label="YouTube" href="https://www.youtube.com/" target="_top">
+            <span class="content">
+              <span class="label">YouTube home</span>
+              <span class="meta">Checks youtube.com navigation</span>
+            </span>
+          </a>
+
+          <a class="focusable action-card" data-action="diagnostic-google-signin" data-external-link data-link-label="Google sign-in" href="https://www.youtube.com/signin?action_handle_signin=true&amp;next=%2Faccount&amp;feature=sign_in_button" target="_top">
+            <span class="content">
+              <span class="label">Google sign-in</span>
+              <span class="meta">Checks embedded auth restrictions</span>
+            </span>
+          </a>
+
+          <button class="focusable action-card" data-action="home">
+            <span class="content">
+              <span class="label">Back to launcher</span>
+              <span class="meta">Return to Display app</span>
+            </span>
+          </button>
+        </nav>
       </section>
 
       <div id="toast" class="toast" role="status" aria-live="polite"></div>

@@ -27,6 +27,7 @@
   var videoTitle;
   var watchLink;
   var signInUrlField;
+  var diagnosticStatus;
   var toast;
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -35,6 +36,7 @@
     videoTitle = document.getElementById("video-title");
     watchLink = document.getElementById("watch-link");
     signInUrlField = document.getElementById("signin-url");
+    diagnosticStatus = document.getElementById("diagnostic-status");
     toast = document.getElementById("toast");
 
     restoreState();
@@ -43,7 +45,10 @@
     registerServiceWorker();
 
     var launchVideo = getLaunchVideoId();
-    if (launchVideo) {
+    var diagnosticResult = getDiagnosticResult();
+    if (diagnosticResult) {
+      showDiagnosticResult(diagnosticResult);
+    } else if (launchVideo) {
       startVideo(launchVideo, true);
     } else {
       focusFirst();
@@ -58,7 +63,7 @@
         return;
       }
       if (isExternalAnchor(target)) {
-        showToast("Opening YouTube...");
+        showToast(linkOpeningMessage(target));
         return;
       }
       handleAction(target.dataset.action, target);
@@ -82,7 +87,7 @@
       if (active && active.classList.contains("focusable")) {
         if (isExternalAnchor(active)) {
           if (event.key === "Enter") {
-            showToast("Opening YouTube...");
+            showToast(linkOpeningMessage(active));
             return;
           }
           event.preventDefault();
@@ -130,6 +135,9 @@
         break;
       case "show-account":
         showScreen("account-screen");
+        break;
+      case "show-diagnostics":
+        showScreen("diagnostics-screen");
         break;
       case "home":
         showScreen("home-screen", true);
@@ -321,12 +329,20 @@
       return;
     }
 
-    showToast("Opening YouTube...");
+    showToast("Opening link...");
     try {
       window.top.location.assign(url);
     } catch (error) {
       window.location.assign(url);
     }
+  }
+
+  function linkOpeningMessage(element) {
+    var label = element && element.getAttribute("data-link-label");
+    if (label) {
+      return "Opening " + label + "...";
+    }
+    return "Opening link...";
   }
 
   function updateExternalLinks() {
@@ -503,6 +519,23 @@
   function getLaunchVideoId() {
     var params = new URLSearchParams(window.location.search);
     return normalizeVideoId(params.get("v") || params.get("video") || params.get("url"));
+  }
+
+  function getDiagnosticResult() {
+    var params = new URLSearchParams(window.location.search);
+    return params.get("diag") || "";
+  }
+
+  function showDiagnosticResult(result) {
+    var message = "Diagnostic link returned to the app.";
+    if (result === "same-origin") {
+      message = "App URL reload returned here. Same-origin navigation works.";
+    }
+    if (diagnosticStatus) {
+      diagnosticStatus.textContent = message;
+    }
+    showScreen("diagnostics-screen", true);
+    showToast(message);
   }
 
   function normalizeVideoId(value) {

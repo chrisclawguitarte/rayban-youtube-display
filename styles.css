@@ -125,6 +125,7 @@ h2 {
 
 .session-panel,
 .account-panel,
+.diagnostics-panel,
 .player-status {
   border: 1px solid var(--edge);
   border-radius: 8px;
@@ -176,6 +177,11 @@ h2 {
 .action-list.short {
   max-height: 304px;
   margin-top: 16px;
+}
+
+.action-list.diagnostic-list {
+  max-height: 356px;
+  margin-top: 12px;
 }
 
 .action-card,
@@ -362,6 +368,19 @@ h2 {
 
 .account-panel p:last-child {
   margin-bottom: 0;
+}
+
+.diagnostics-panel {
+  margin-top: 12px;
+  padding: 12px 14px;
+  color: var(--text-soft);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.28;
+}
+
+.diagnostics-panel p {
+  margin: 0;
 }
 
 .url-label {
