@@ -38,8 +38,8 @@ assert(new Set(Array.from(html.matchAll(/id="([^"]+-screen)"/g)).map(function (m
 assert((html.match(/class="[^"]*focusable/g) || []).length >= 8, "interactive elements are focusable");
 assert((html.match(/data-action="/g) || []).length >= 8, "buttons use data-action attributes");
 assert(html.indexOf('data-action="back"') !== -1, "back buttons use data-action=back");
-assert(html.indexOf('data-external-link href="https://www.youtube.com/" target="_self"') !== -1, "YouTube home is a same-window anchor");
-assert(html.indexOf('data-external-link href="https://www.youtube.com/feed/subscriptions" target="_self"') !== -1, "subscriptions is a same-window anchor");
+assert(html.indexOf('data-external-link href="https://www.youtube.com/" target="_top"') !== -1, "YouTube home is a top-level same-window anchor");
+assert(html.indexOf('data-external-link href="https://www.youtube.com/feed/subscriptions" target="_top"') !== -1, "subscriptions is a top-level same-window anchor");
 assert(html.indexOf('id="watch-link"') !== -1 && html.indexOf('href="https://www.youtube.com/watch?v=M7lc1UVf-VE"') !== -1, "watch link is a real anchor");
 assert(html.indexOf('id="signin-url"') !== -1, "sign-in URL fallback is visible");
 assert(html.indexOf('data-action="copy-signin-url"') !== -1, "sign-in URL copy fallback is available");
