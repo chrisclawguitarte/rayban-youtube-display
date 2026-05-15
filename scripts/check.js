@@ -38,6 +38,12 @@ assert(new Set(Array.from(html.matchAll(/id="([^"]+-screen)"/g)).map(function (m
 assert((html.match(/class="[^"]*focusable/g) || []).length >= 8, "interactive elements are focusable");
 assert((html.match(/data-action="/g) || []).length >= 8, "buttons use data-action attributes");
 assert(html.indexOf('data-action="back"') !== -1, "back buttons use data-action=back");
+assert(html.indexOf('data-external-link href="https://www.youtube.com/" target="_self"') !== -1, "YouTube home is a same-window anchor");
+assert(html.indexOf('data-external-link href="https://www.youtube.com/feed/subscriptions" target="_self"') !== -1, "subscriptions is a same-window anchor");
+assert(html.indexOf('id="watch-link"') !== -1 && html.indexOf('href="https://www.youtube.com/watch?v=M7lc1UVf-VE"') !== -1, "watch link is a real anchor");
+assert(html.indexOf('id="signin-url"') !== -1, "sign-in URL fallback is visible");
+assert(html.indexOf('data-action="copy-signin-url"') !== -1, "sign-in URL copy fallback is available");
+assert(html.indexOf('target="_blank"') === -1, "external links do not use target=_blank");
 assert(html.indexOf('rel="manifest" href="manifest.webmanifest"') !== -1, "manifest is linked");
 assert(html.indexOf('rel="icon" href="favicon.png"') !== -1, "favicon is linked");
 
@@ -49,6 +55,9 @@ assert(css.indexOf("min-height: 88px") !== -1, "primary controls meet 88dp targe
 
 assert(js.indexOf("addEventListener(\"keydown\"") !== -1, "keydown listener is present");
 assert(js.indexOf("event.preventDefault()") !== -1, "D-pad key handling prevents default scrolling");
+assert(js.indexOf("isExternalAnchor") !== -1, "external anchor handling preserves native navigation");
+assert(js.indexOf("navigateToExternal") !== -1, "fallback top-level external navigation is present");
+assert(js.indexOf("window.open") === -1, "app does not use popup navigation");
 assert(js.indexOf("window.YT.Player") !== -1, "YouTube web player API is used");
 assert(js.indexOf("localStorage") !== -1, "localStorage persistence is present");
 assert(js.indexOf("serviceWorker") !== -1, "service worker registration is present");

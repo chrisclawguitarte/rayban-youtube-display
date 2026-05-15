@@ -34,19 +34,19 @@
             </span>
           </button>
 
-          <button class="focusable action-card" data-action="open-youtube-home">
+          <a class="focusable action-card" data-action="open-youtube-home" data-external-link href="https://www.youtube.com/" target="_self">
             <span class="content">
               <span class="label">Open YouTube home</span>
               <span class="meta">Use the normal YouTube site</span>
             </span>
-          </button>
+          </a>
 
-          <button class="focusable action-card" data-action="open-youtube-subscriptions">
+          <a class="focusable action-card" data-action="open-youtube-subscriptions" data-external-link href="https://www.youtube.com/feed/subscriptions" target="_self">
             <span class="content">
               <span class="label">Subscriptions</span>
               <span class="meta">Requires YouTube sign-in</span>
             </span>
-          </button>
+          </a>
 
           <button class="focusable action-card" data-action="show-account">
             <span class="content">
@@ -78,9 +78,9 @@
           <button class="focusable control-button primary" data-action="player-toggle">
             <span class="content">Play / Pause</span>
           </button>
-          <button class="focusable control-button" data-action="open-watch">
+          <a id="watch-link" class="focusable control-button" data-action="open-watch" data-external-link href="https://www.youtube.com/watch?v=M7lc1UVf-VE" target="_self">
             <span class="content">Watch on YouTube</span>
-          </button>
+          </a>
           <button class="focusable control-button" data-action="seek-back">
             <span class="content">Back 10s</span>
           </button>
@@ -102,13 +102,21 @@
         <div class="account-panel">
           <p>This app never asks for, stores, or proxies Google credentials.</p>
           <p>Premium playback is handled by YouTube when the browser is signed in.</p>
+          <label class="url-label" for="signin-url">Sign-in URL</label>
+          <input id="signin-url" class="url-field" type="text" value="https://www.youtube.com/signin?action_handle_signin=true&amp;next=%2Faccount&amp;feature=sign_in_button" readonly>
         </div>
 
         <div class="action-list short">
-          <button class="focusable action-card primary" data-action="open-youtube-signin">
+          <a class="focusable action-card primary" data-action="open-youtube-signin" data-external-link href="https://www.youtube.com/signin?action_handle_signin=true&amp;next=%2Faccount&amp;feature=sign_in_button" target="_self">
             <span class="content">
-              <span class="label">Open YouTube account</span>
+              <span class="label">Open YouTube sign-in</span>
               <span class="meta">Sign in only on youtube.com</span>
+            </span>
+          </a>
+          <button class="focusable action-card" data-action="copy-signin-url">
+            <span class="content">
+              <span class="label">Copy sign-in URL</span>
+              <span class="meta">Fallback for restricted WebViews</span>
             </span>
           </button>
           <button class="focusable action-card" data-action="home">

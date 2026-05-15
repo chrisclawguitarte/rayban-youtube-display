@@ -1,4 +1,4 @@
-var CACHE = "rayban-youtube-display-v1";
+var CACHE = "rayban-youtube-display-v2";
 var URLS = [
   "./",
   "./index.html",
@@ -12,6 +12,8 @@ self.addEventListener("install", function (event) {
   event.waitUntil(
     caches.open(CACHE).then(function (cache) {
       return cache.addAll(URLS);
+    }).then(function () {
+      return self.skipWaiting();
     })
   );
 });
@@ -25,6 +27,8 @@ self.addEventListener("activate", function (event) {
         }
         return null;
       }));
+    }).then(function () {
+      return self.clients.claim();
     })
   );
 });

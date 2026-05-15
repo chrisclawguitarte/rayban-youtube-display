@@ -5,7 +5,10 @@
     appName: "Ray-Ban YouTube Display",
     storageKey: "rayban-youtube-display:v1",
     defaultVideoId: "M7lc1UVf-VE",
-    youtubeBase: "https://www.youtube.com"
+    youtubeBase: "https://www.youtube.com",
+    youtubeHomeUrl: "https://www.youtube.com/",
+    subscriptionsUrl: "https://www.youtube.com/feed/subscriptions",
+    signInUrl: "https://www.youtube.com/signin?action_handle_signin=true&next=%2Faccount&feature=sign_in_button"
   };
 
   var state = {
@@ -22,15 +25,20 @@
   var playerTarget;
   var playerStatus;
   var videoTitle;
+  var watchLink;
+  var signInUrlField;
   var toast;
 
   document.addEventListener("DOMContentLoaded", function () {
     playerTarget = document.getElementById("player-target");
     playerStatus = document.getElementById("player-status");
     videoTitle = document.getElementById("video-title");
+    watchLink = document.getElementById("watch-link");
+    signInUrlField = document.getElementById("signin-url");
     toast = document.getElementById("toast");
 
     restoreState();
+    updateExternalLinks();
     bindEvents();
     registerServiceWorker();
 
@@ -49,6 +57,10 @@
       if (!target) {
         return;
       }
+      if (isExternalAnchor(target)) {
+        showToast("Opening YouTube...");
+        return;
+      }
       handleAction(target.dataset.action, target);
     });
   }
@@ -59,9 +71,8 @@
       return;
     }
 
-    event.preventDefault();
-
     if (event.key.indexOf("Arrow") === 0) {
+      event.preventDefault();
       moveFocus(event.key.replace("Arrow", "").toLowerCase());
       return;
     }
@@ -69,11 +80,22 @@
     if (event.key === "Enter" || event.key === " ") {
       var active = document.activeElement;
       if (active && active.classList.contains("focusable")) {
+        if (isExternalAnchor(active)) {
+          if (event.key === "Enter") {
+            showToast("Opening YouTube...");
+            return;
+          }
+          event.preventDefault();
+          navigateToExternal(active.href);
+          return;
+        }
+        event.preventDefault();
         active.click();
       }
       return;
     }
 
+    event.preventDefault();
     goBack();
   }
 
@@ -92,16 +114,19 @@
         seekBy(10);
         break;
       case "open-watch":
-        navigateToYouTube(watchUrl(state.activeVideoId));
+        navigateToExternal(watchUrl(state.activeVideoId));
         break;
       case "open-youtube-home":
-        navigateToYouTube(CONFIG.youtubeBase + "/");
+        navigateToExternal(CONFIG.youtubeHomeUrl);
         break;
       case "open-youtube-subscriptions":
-        navigateToYouTube(CONFIG.youtubeBase + "/feed/subscriptions");
+        navigateToExternal(CONFIG.subscriptionsUrl);
         break;
       case "open-youtube-signin":
-        navigateToYouTube(CONFIG.youtubeBase + "/account");
+        navigateToExternal(CONFIG.signInUrl);
+        break;
+      case "copy-signin-url":
+        copySignInUrl();
         break;
       case "show-account":
         showScreen("account-screen");
@@ -126,6 +151,7 @@
 
     state.activeVideoId = safeId;
     saveState();
+    updateExternalLinks();
     videoTitle.textContent = fromLaunch ? "Launched video" : "Test video";
     playerStatus.textContent = "Loading YouTube player...";
     showScreen("player-screen");
@@ -282,8 +308,67 @@
     state.player.seekTo(Math.max(0, currentTime + seconds), true);
   }
 
-  function navigateToYouTube(url) {
-    window.location.href = url;
+  function isExternalAnchor(element) {
+    return element &&
+      element.tagName === "A" &&
+      element.hasAttribute("data-external-link") &&
+      element.href;
+  }
+
+  function navigateToExternal(url) {
+    if (!url) {
+      showToast("Link unavailable");
+      return;
+    }
+
+    showToast("Opening YouTube...");
+    try {
+      window.top.location.assign(url);
+    } catch (error) {
+      window.location.assign(url);
+    }
+  }
+
+  function updateExternalLinks() {
+    if (watchLink) {
+      watchLink.href = watchUrl(state.activeVideoId);
+    }
+    if (signInUrlField) {
+      signInUrlField.value = CONFIG.signInUrl;
+    }
+  }
+
+  function copySignInUrl() {
+    var text = CONFIG.signInUrl;
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(text)
+        .then(function () {
+          showToast("Sign-in URL copied");
+        })
+        .catch(selectSignInUrl);
+      return;
+    }
+
+    selectSignInUrl();
+  }
+
+  function selectSignInUrl() {
+    if (!signInUrlField) {
+      showToast("Copy unavailable");
+      return;
+    }
+
+    signInUrlField.focus({ preventScroll: true });
+    signInUrlField.select();
+    try {
+      if (document.execCommand("copy")) {
+        showToast("Sign-in URL copied");
+        return;
+      }
+    } catch (error) {
+      // Some WebViews intentionally block clipboard writes.
+    }
+    showToast("Sign-in URL selected");
   }
 
   function showScreen(screenId, resetStack) {
